@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 # 
-# Last Updated: 6-01-2026
+# Last Updated: 6-03-2026
 
 """Rohde and Schwarz Converter"""
 
@@ -18,7 +18,7 @@ from defusedxml.ElementTree import parse
 
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -123,22 +123,19 @@ def validate_rohdeschwarz(xml_path: Path) -> None:
     tree = parse(xml_path)
     root = tree.getroot()
 
-    # validate CenterFrequency
-    center_freq_raw = _text_of(root, "Clock")
-    try:
-        center_frequency = float(center_freq_raw)
-    except (TypeError, ValueError) as err:
-        raise SigMFConversionError(f"Invalid or missing CenterFrequency: {center_freq_raw}") from err
-
-    # validate SampleRate
+    # validate (number of) Samples
     num_samples_raw = _text_of(root, "Samples")
     try:
-        sample_rate = float(num_samples_raw)
+        num_samples = float(num_samples_raw)
     except (TypeError, ValueError) as err:
-        raise SigMFConversionError(f"Invalid or missing SampleRate: {num_samples_raw}") from err
+        raise SigMFConversionError(f"Invalid or missing Number Of SamplesleRate Raw: {num_samples_raw} Converted to Float: {num_samples}" ) from err
 
-    if sample_rate <= 0:
-        raise SigMFConversionError(f"Invalid SampleRate: {sample_rate} (must be > 0)")
+    # Validate sample rate - "Clock"
+    sample_rate_raw= _text_of(root, "Clock")
+    if float(sample_rate_raw) <= 0:
+        raise SigMFConversionError(f"Invalid SampleRate: {sample_rate_raw} (must be > 0)")
+    if sample_rate_raw is None:
+         raise SigMFConversionError("Missing Sammple Rate (Clock) in rohdeschwarz XML")
 
     # validate ScalingFactor, for example, "1"
     scaling_factor_raw = _text_of(root, "ScalingFactor")
@@ -167,7 +164,7 @@ def validate_rohdeschwarz(xml_path: Path) -> None:
     if numberofchannels_raw is None:
         # Missing NumberOfChannels in rohdeschwarz XML so use 1
         numberofchannels_raw =1
-   
+
     # validate associated IQ file exists - example IQ file name "File.complex.1ch.float32"
     datafilename_raw = _text_of(root, "DataFilename")
     if datafilename_raw is None:
@@ -215,9 +212,9 @@ def _build_metadata(xml_path: Path) -> Tuple[dict, dict, list, int]:
     # validate required fields and associated IQ file
     validate_rohdeschwarz(xml_path)
 
-    # extract and convert required fields
+    # extract and convert required fields that were previously validated
 
-    # TODO: R&S files don't seem to have a center frequency field, so maybe add a comment about this being an Oscilloscope capture.
+    # TODO: R&S files don't have a center frequency field, so maybe add a comment about this being an SA or Oscilloscope capture.
     center_frequency = float("0")
 
     numberofchannels_raw = _text_of(root, "NumberOfChannels")
@@ -229,7 +226,6 @@ def _build_metadata(xml_path: Path) -> Tuple[dict, dict, list, int]:
         numberofchannels = int(numberofchannels_raw)
 
     sample_rate = float(_text_of(root, "Clock")) 
-    
     data_type_raw = _text_of(root, "DataType")
 
     # optional EpochNanos field
@@ -264,14 +260,6 @@ def _build_metadata(xml_path: Path) -> Tuple[dict, dict, list, int]:
             datafilename  = str(datafilename_raw)
         except ValueError:
             log.warning(f"could not parse DataFileName: {datafilename_raw}")
-
-    scale_factor = None
-    scale_factor_raw = _text_of(root, "ScaleFactor")
-    if scale_factor_raw:
-        try:
-            scale_factor = float(scale_factor_raw)
-        except ValueError:
-            log.warning(f"could not parse ScaleFactor: {scale_factor_raw}")
 
     # parse optional preview data if present
     preview_node = root.find(".//PreviewData")
@@ -310,9 +298,16 @@ def _build_metadata(xml_path: Path) -> Tuple[dict, dict, list, int]:
     elem_size = np.dtype(np.float32).itemsize
     frame_bytes = 2 * elem_size  # I and Q components
 
+    #TODO: Test and validate
+    sample_count = _text_of(root, "Samples")
+    log.debug("sample count: %d", sample_count)
+
     # calculate sample count using the original IQ data file size
     sample_count_calculated = filesize // frame_bytes
     log.debug("sample count: %d", sample_count_calculated)
+
+    if sample_count != sample_count_calculated:
+        log.debug("sample counts not equal")
 
     # convert the datetime object to an ISO 8601 formatted string if EpochNanos is present
     iso_8601_string = None
