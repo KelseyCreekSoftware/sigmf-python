@@ -62,7 +62,12 @@ Save a Numpy array as a SigMF Recording
     data = np.zeros(1024, dtype=np.complex64)
 
     # create SigMFFile from array — datatype is inferred from the numpy array
-    meta = sigmf.fromarray(data, sample_rate=48000, frequency=915e6)
+    meta = sigmf.fromarray(data)
+
+    # optional additional metadata
+    meta.sample_rate = 48000
+    meta.description = "an example recording"
+    meta.add_capture(start_index=0, metadata={sigmf.FREQUENCY_KEY: 915e6})
 
     # write to separate .sigmf-meta and .sigmf-data files
     meta.tofile("example")
@@ -98,10 +103,10 @@ For full control over global fields, captures, and annotations:
     meta = SigMFFile(
         data_file="example.sigmf-data",  # extension is optional
         global_info={
-            SigMFFile.DATATYPE_KEY: get_data_type_str(data),  # in this case, "cf32_le"
-            SigMFFile.SAMPLE_RATE_KEY: 48000,
-            SigMFFile.AUTHOR_KEY: "jane.doe@domain.org",
-            SigMFFile.DESCRIPTION_KEY: "All zero complex float32 example file.",
+            sigmf.DATATYPE_KEY: get_data_type_str(data),  # in this case, "cf32_le"
+            sigmf.SAMPLE_RATE_KEY: 48000,
+            sigmf.AUTHOR_KEY: "jane.doe@domain.org",
+            sigmf.DESCRIPTION_KEY: "All zero complex float32 example file.",
         },
     )
 
@@ -109,8 +114,8 @@ For full control over global fields, captures, and annotations:
     meta.add_capture(
         0,
         metadata={
-            SigMFFile.FREQUENCY_KEY: 915000000,
-            SigMFFile.DATETIME_KEY: get_sigmf_iso8601_datetime_now(),
+            sigmf.FREQUENCY_KEY: 915000000,
+            sigmf.DATETIME_KEY: get_sigmf_iso8601_datetime_now(),
         },
     )
 
@@ -119,9 +124,9 @@ For full control over global fields, captures, and annotations:
         100,
         200,
         metadata={
-            SigMFFile.FLO_KEY: 914995000.0,
-            SigMFFile.FHI_KEY: 915005000.0,
-            SigMFFile.COMMENT_KEY: "example annotation",
+            sigmf.FREQ_LOWER_EDGE_KEY: 914995000.0,
+            sigmf.FREQ_UPPER_EDGE_KEY: 915005000.0,
+            sigmf.COMMENT_KEY: "example annotation",
         },
     )
 
