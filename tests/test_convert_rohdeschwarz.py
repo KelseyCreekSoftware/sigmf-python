@@ -10,8 +10,8 @@ import tarfile
 from pathlib import Path
 import numpy as np
 import pytest
-from sigmf import SigMFFile
 import defusedxml.ElementTree as ET
+from sigmf import SigMFFile
 
 
 from sigmf.convert.rohdeschwarz import (
@@ -79,6 +79,8 @@ def test_xml_to_dict_repeated_tags_and_nested_elements():
     """
     root = ET.fromstring(xml_text)
     result = xml_to_dict(root)
+
+# TODO: Fix type mis match
 
     assert result["Magnitude"]["float"] == ["1.0", "2.0"]
     assert result["Phase"] == "0.0"
