@@ -14,10 +14,9 @@ from pathlib import Path
 from .. import __version__ as toolversion
 from ..error import SigMFConversionError
 from . import detect_converter
+from .wav import wav_to_sigmf
 from .blue import blue_to_sigmf
 from .signalhound import signalhound_to_sigmf
-from .signalhound import signalhound_to_sigmf
-from .wav import wav_to_sigmf
 from .rohdeschwarz import rohdeschwarz_to_sigmf
 
 def main() -> None:

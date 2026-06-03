@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 # 
-# Last Updated: 4-04-2026
+# Last Updated: 6-01-2026
 
 """Rohde and Schwarz Converter"""
 
@@ -16,17 +16,17 @@ import getpass
 import tempfile
 from defusedxml.ElementTree import parse
 
-
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List, Optional, Tuple
 
 import numpy as np
 
-from .. import SigMFFile, fromfile
-from ..error import SigMFConversionError
 from ..sigmffile import get_sigmf_filenames
+from ..sigmffile import SigMFFile, fromfile
 from ..utils import SIGMF_DATETIME_ISO8601_FMT
+from ..error import SigMFConversionError
+
 
 log = logging.getLogger()
 
