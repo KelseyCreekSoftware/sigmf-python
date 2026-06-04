@@ -4,9 +4,11 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 # 
-# Last Updated: 6-03-2026
+# Last Updated: 6-04-2026
 
 """Rohde and Schwarz Converter"""
+
+# TODO: Act on thoughtful Co-Pilot code review.
 
 import io
 import os
@@ -72,7 +74,11 @@ def is_safe_member(tar, member, target_dir):
     abs_target = os.path.abspath(target_dir)
     abs_member = os.path.abspath(member_path)
 
-    return abs_member.startswith(abs_target)
+    try:
+        return os.path.commonpath([abs_target, abs_member]) == abs_target
+    except ValueError:
+        return False
+
 
 def safe_extract(tar, target_dir):
     """
@@ -135,7 +141,7 @@ def validate_rohdeschwarz(xml_path: Path) -> None:
     if float(sample_rate_raw) <= 0:
         raise SigMFConversionError(f"Invalid SampleRate: {sample_rate_raw} (must be > 0)")
     if sample_rate_raw is None:
-         raise SigMFConversionError("Missing Sammple Rate (Clock) in rohdeschwarz XML")
+         raise SigMFConversionError("Missing Sample Rate (Clock) in rohdeschwarz XML")
 
     # validate ScalingFactor, for example, "1"
     scaling_factor_raw = _text_of(root, "ScalingFactor")
@@ -462,7 +468,7 @@ def rohdeschwarz_to_sigmf(
 
     # Get unique IQ filename from global_info
     iq_filename = global_info.get("rohdeschwarz:iq_datafilename")
-    print(f"iq_filename: {iq_filename}")
+    log.info(f"iq_filename: {iq_filename}")
 
 
     # create NCD if specified, otherwise create standard SigMF dataset or archive
@@ -518,7 +524,7 @@ def rohdeschwarz_to_sigmf(
 
             # write converted iq data to temporary file
             iq_data.tofile(data_path)
-            log.debug("wrote converted iq data to %s", data_path)
+            log.info("wrote converted iq data to %s", data_path)
 
             meta = SigMFFile(data_file=data_path, global_info=global_info)
             meta.add_capture(0, metadata=capture_info)
@@ -546,7 +552,7 @@ def rohdeschwarz_to_sigmf(
         # convert iq data for rohdeschwarz file
         # determine unique IQ file name
         data_file_path = rohdeschwarz_path.parent / iq_filename
-        print(f"data_file_path: {data_file_path}")
+        log.info(f"data_file_path: {data_file_path}")
 
         try:
             iq_data = convert_iq_data(data_file_path, sample_count)
@@ -557,7 +563,7 @@ def rohdeschwarz_to_sigmf(
         output_dir = filenames["data_fn"].parent
         output_dir.mkdir(parents=True, exist_ok=True)
         iq_data.tofile(filenames["data_fn"])
-        log.debug("wrote SigMF dataset to %s", filenames["data_fn"])
+        log.info("wrote SigMF dataset to %s", filenames["data_fn"])
 
         # create sigmffile with converted iq data
         meta = SigMFFile(data_file=filenames["data_fn"], global_info=global_info)
@@ -577,5 +583,5 @@ def rohdeschwarz_to_sigmf(
         meta.tofile(filenames["meta_fn"], toarchive=False)
         log.info("wrote SigMF metadata to %s", filenames["meta_fn"])
 
-    log.debug("created %r", meta)
+    log.info("created %r", meta)
     return meta

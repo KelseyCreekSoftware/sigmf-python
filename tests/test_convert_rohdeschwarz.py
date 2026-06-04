@@ -13,6 +13,7 @@ import pytest
 import defusedxml.ElementTree as ET
 from sigmf import SigMFFile
 
+# TODO: Update code to use Hypothesis as appropriate
 
 from sigmf.convert.rohdeschwarz import (
     SigMFConversionError,
@@ -24,9 +25,7 @@ from sigmf.convert.rohdeschwarz import (
     rohdeschwarz_to_sigmf,
 )
 
-"""
-Create a minimal, valid Rohde & Schwarz IQ.TAR file for testing.
-"""
+# Create a minimal, valid Rohde & Schwarz IQ.TAR file for testing.
 def _write_rohdeschwarz_tar(tmp_path: Path, xml_filename: str = "metadata.xml", iq_filename: str = "File.complex.1ch.float32", xml_content: str = None, iq_values: np.ndarray = None):
     source_dir = tmp_path / "source"
     source_dir.mkdir()
